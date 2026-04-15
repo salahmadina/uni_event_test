@@ -229,13 +229,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Database powered by MySQL
 - Icons and styling inspired by modern web design principles
 
-## 📞 Support
 
-If you have any questions or need help:
-
-1. Check the [Issues](https://github.com/your-username/university-event-management/issues) page
-2. Create a new issue with detailed description
-3. Contact the maintainers
 
 ---
 
