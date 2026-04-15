@@ -83,6 +83,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>3.4.4</version>
                 <configuration>
+                    <mainClass>com.university.eventmanagement.EventManagementApplication</mainClass>
                 </configuration>
             </plugin>
             <plugin>
