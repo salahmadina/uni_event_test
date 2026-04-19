@@ -35,7 +35,7 @@ src/main/java/com/university/eventmanagement/
     └── AuthInterceptor.java           ← Checks every request for login
 ```
 
-### Frontend Structure
+### Frontend Structuree
 
 ```
 src/main/resources/templates/          ← HTML files (Thymeleaf)
