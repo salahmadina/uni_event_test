@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Bookings - UniEvents</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .badge-cancelled { background: #dc3545; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: .78rem; }
+        .row-cancelled td { background: #fff5f5; }
+        .filter-bar { margin-bottom: 1rem; display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+        .filter-bar label { font-weight: 600; margin-right: .3rem; }
+    </style>
+</head>
+<body>
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="page-container">
+        <div class="page-header">
+            <h2>All Bookings</h2>
+        </div>
+
+        <div th:if="${error}"   class="alert alert-error"   th:text="${error}"></div>
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+        <!-- Quick filter (client-side) -->
+        <div class="filter-bar">
+            <label>Filter:</label>
+            <button class="btn btn-sm btn-outline" onclick="filterRows('all')">All</button>
+            <button class="btn btn-sm btn-outline" onclick="filterRows('cancelled')">Cancelled Events</button>
+            <button class="btn btn-sm btn-outline" onclick="filterRows('paid')">Paid</button>
+            <button class="btn btn-sm btn-outline" onclick="filterRows('pending')">Pending</button>
+        </div>
+
+        <div th:if="${#lists.isEmpty(bookings)}" class="empty-state">
+            <p>No bookings yet.</p>
+        </div>
+
+        <div class="table-wrapper" th:unless="${#lists.isEmpty(bookings)}">
+            <table class="data-table" id="bookingsTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Student Name</th>
+                        <th>College ID</th>
+                        <th>Event</th>
+                        <th>Event Status</th>
+                        <th>Event Date</th>
+                        <th>Price</th>
+                        <th>Payment Status</th>
+                        <th>Booked On</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="booking, stat : ${bookings}"
+                        th:classappend="${booking.event != null and booking.event.status.name() == 'CANCELLED'} ? 'row-cancelled' : ''"
+                        th:attr="data-event-status=${booking.event != null ? booking.event.status.name() : 'DELETED'},
+                                 data-payment-status=${booking.paymentStatus.name()}">
+
+                        <td th:text="${stat.index + 1}"></td>
+                        <td th:text="${booking.user.name}"></td>
+                        <td th:text="${booking.user.collegeId}"></td>
+
+                        <!-- Event name: use snapshot as fallback -->
+                        <td>
+                            <span th:if="${booking.event != null}" th:text="${booking.event.name}"></span>
+                            <span th:if="${booking.event == null}" th:text="${booking.eventNameSnapshot}"></span>
+                        </td>
+
+                        <!-- Event Status badge -->
+                        <td>
+                            <span th:if="${booking.event == null}" class="badge badge-cancelled">DELETED</span>
+                            <span th:if="${booking.event != null}" th:switch="${booking.event.status.name()}">
+                                <span th:case="'UPCOMING'"  class="badge badge-success">UPCOMING</span>
+                                <span th:case="'POSTPONED'" class="badge badge-warning">POSTPONED</span>
+                                <span th:case="'PAST'"      class="badge badge-grey">PAST</span>
+                                <span th:case="'CANCELLED'" class="badge badge-cancelled">CANCELLED</span>
+                            </span>
+                        </td>
+
+                        <td>
+                            <span th:if="${booking.event != null}"
+                                  th:text="${#temporals.format(booking.event.eventDate, 'dd MMM yyyy')}"></span>
+                            <span th:if="${booking.event == null}" class="text-muted">&#8212;</span>
+                        </td>
+
+                        <td>
+                            <span th:if="${booking.event != null and booking.event.free}">FREE</span>
+                            <span th:if="${booking.event != null and !booking.event.free}"
+                                  th:text="'$' + ${booking.event.price}"></span>
+                            <span th:if="${booking.event == null}" class="text-muted">&#8212;</span>
+                        </td>
+
+                        <td>
+                            <span th:switch="${booking.paymentStatus.name()}">
+                                <span th:case="'FREE'"    class="badge badge-success">FREE</span>
+                                <span th:case="'PENDING'" class="badge badge-warning">PENDING</span>
+                                <span th:case="'PAID'"    class="badge badge-paid">PAID &#10003;</span>
+                            </span>
+                        </td>
+
+                        <td th:text="${#temporals.format(booking.bookedAt, 'dd MMM yyyy')}"></td>
+
+                        <td>
+                            <form th:if="${booking.paymentStatus.name() == 'PENDING'}"
+                                  th:action="@{/admin/bookings/confirm/{id}(id=${booking.id})}"
+                                  method="post">
+                                <button type="submit" class="btn btn-sm btn-primary">Confirm Payment</button>
+                            </form>
+                            <span th:unless="${booking.paymentStatus.name() == 'PENDING'}"
+                                  class="text-muted">&#8212;</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function filterRows(type) {
+            var rows = document.querySelectorAll('#bookingsTable tbody tr');
+            rows.forEach(function(row) {
+                var evStatus  = row.getAttribute('data-event-status')  || '';
+                var payStatus = row.getAttribute('data-payment-status') || '';
+                if (type === 'all') {
+                    row.style.display = '';
+                } else if (type === 'cancelled') {
+                    row.style.display = (evStatus === 'CANCELLED' || evStatus === 'DELETED') ? '' : 'none';
+                } else if (type === 'paid') {
+                    row.style.display = (payStatus === 'PAID') ? '' : 'none';
+                } else if (type === 'pending') {
+                    row.style.display = (payStatus === 'PENDING') ? '' : 'none';
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Events - UniEvents</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .badge-cancelled { background: #dc3545; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: .78rem; }
+        .row-cancelled td { background: #fff5f5; opacity: .85; }
+        .section-divider { margin: 2rem 0 .5rem; font-size: 1rem; font-weight: 600; color: #555; border-bottom: 1px solid #ddd; padding-bottom: .3rem; }
+    </style>
+</head>
+<body>
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="page-container">
+        <div class="page-header">
+            <h2>Manage Events</h2>
+            <a th:href="@{/admin/events/new}" class="btn btn-primary">+ Add Event</a>
+        </div>
+
+        <div th:if="${error}"   class="alert alert-error"   th:text="${error}"></div>
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+        <!-- Active events table -->
+        <p class="section-divider">Active Events</p>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Location</th>
+                        <th>Price</th>
+                        <th>Seats</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="event : ${events}"
+                        th:if="${event.status.name() != 'CANCELLED'}"
+                        th:classappend="${event.status.name() == 'PAST'} ? 'row-past' : ''">
+                        <td th:text="${event.name}"></td>
+                        <td th:text="${#temporals.format(event.eventDate, 'dd MMM yyyy, HH:mm')}"></td>
+                        <td th:text="${event.location}"></td>
+                        <td>
+                            <span th:if="${event.free}">FREE</span>
+                            <span th:unless="${event.free}" th:text="'$' + ${event.price}"></span>
+                        </td>
+                        <td>
+                            <span th:if="${event.unlimited}">Unlimited</span>
+                            <span th:unless="${event.unlimited}"
+                                  th:text="${event.remainingSeats} + ' left'"></span>
+                        </td>
+                        <td>
+                            <span th:switch="${event.status.name()}">
+                                <span th:case="'UPCOMING'"  class="badge badge-success">UPCOMING</span>
+                                <span th:case="'POSTPONED'" class="badge badge-warning">POSTPONED</span>
+                                <span th:case="'PAST'"      class="badge badge-grey">PAST</span>
+                            </span>
+                        </td>
+                        <td class="actions-cell">
+                            <a th:href="@{/admin/events/edit/{id}(id=${event.id})}"
+                               class="btn btn-sm btn-outline">Edit</a>
+
+                            <form th:action="@{/admin/events/past/{id}(id=${event.id})}"
+                                  method="post" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-warning"
+                                        th:disabled="${event.status.name() == 'PAST'}">Past</button>
+                            </form>
+
+                            <form th:action="@{/admin/events/delete/{id}(id=${event.id})}"
+                                  method="post" style="display:inline;"
+                                  onsubmit="return confirm('Cancel this event? Bookings and payment records will be preserved.')">
+                                <button type="submit" class="btn btn-sm btn-danger">Cancel Event</button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Cancelled events section -->
+        <p class="section-divider">Cancelled Events (archived)</p>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Location</th>
+                        <th>Price</th>
+                        <th>Booked Seats</th>
+                        <th>Status</th>
+                        <th>View Bookings</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="event : ${events}"
+                        th:if="${event.status.name() == 'CANCELLED'}"
+                        class="row-cancelled">
+                        <td th:text="${event.name}"></td>
+                        <td th:text="${#temporals.format(event.eventDate, 'dd MMM yyyy, HH:mm')}"></td>
+                        <td th:text="${event.location}"></td>
+                        <td>
+                            <span th:if="${event.free}">FREE</span>
+                            <span th:unless="${event.free}" th:text="'$' + ${event.price}"></span>
+                        </td>
+                        <td th:text="${event.bookedSeats} + ' student(s)'"></td>
+                        <td><span class="badge badge-cancelled">CANCELLED</span></td>
+                        <td>
+                            <a th:href="@{/admin/bookings}" class="btn btn-sm btn-outline">View Bookings</a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(events) or !#lists.size(events.?[status.name() == 'CANCELLED']) > 0}">
+                        <td colspan="7" style="text-align:center;color:#888;">No cancelled events.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</body>
+</html>
